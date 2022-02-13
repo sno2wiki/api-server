@@ -1,8 +1,20 @@
 import { bold, yellow } from "std/fmt/colors";
 import { Application, Router } from "oak";
+import { connect as redisConnect, parseURL } from "redis";
+import { MongoClient } from "mongo";
 
 const app = new Application();
 const router = new Router();
+
+const lackEnvs = ["REDIS_URI", "MONGO_URI"].filter((key) => !Deno.env.get(key));
+if (0 < lackEnvs.length) {
+  throw new Error(`Necessary environment variables (${lackEnvs.join(", ")}) was not passed.`);
+}
+
+const redisClient = await redisConnect(parseURL(Deno.env.get("REDIS_URI")!));
+
+const mongoClient = new MongoClient();
+await mongoClient.connect(Deno.env.get("MONGO_URI")!);
 
 router.get("/docs/:id", async (context) => {
   const documentId = context.params["id"];

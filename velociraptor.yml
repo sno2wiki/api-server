@@ -1,6 +1,11 @@
 scripts:
   dev:
-    cmd: deno run --watch --allow-env=PORT --allow-net --importmap=./import_map.json ./src/main.ts
+    cmd: |
+      deno run --watch \
+      --allow-net \
+      --allow-env=PORT,MONGO_URI,REDIS_URI \
+      --importmap=./import_map.json \
+      ./src/main.ts
 
   lint:
     cmd: deno lint
@@ -15,4 +20,8 @@ scripts:
     cmd: deno coverage ./cov_profile
 
   compile:
-    cmd: deno compile -o ./dist/main --unstable --allow-env=PORT --allow-net ./src/main.ts
+    cmd: |
+      deno compile -o ./dist/main --unstable \
+      --allow-net \
+      --allow-env=PORT,MONGO_URI,REDIS_URI \
+      --importmap=./import_map.json ./src/main.ts
