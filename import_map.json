@@ -1,0 +1,13 @@
+{
+  "imports": {
+    "std/fmt/colors": "https://deno.land/std@0.118.0/fmt/colors.ts",
+    "std/path": "https://deno.land/std@0.120.0/path/mod.ts",
+    "std/testing/asserts": "https://deno.land/std@0.120.0/testing/asserts.ts",
+    "sinon": "https://cdn.skypack.dev/sinon@11.1.2?dts",
+    "oak": "https://deno.land/x/oak/mod.ts",
+    "cors": "https://deno.land/x/cors@v1.2.2/mod.ts",
+    "nanoid": "https://cdn.skypack.dev/nanoid@3.2.0?dts",
+    "ulid": "https://cdn.skypack.dev/ulid@2.3.0?dts",
+    "mongo": "https://deno.land/x/mongo@v0.29.1/mod.ts"
+  }
+}

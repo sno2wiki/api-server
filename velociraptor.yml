@@ -1,0 +1,18 @@
+scripts:
+  dev:
+    cmd: deno run --watch --allow-env=PORT --allow-net --importmap=./import_map.json ./src/main.ts
+
+  lint:
+    cmd: deno lint
+
+  fmt:
+    cmd: deno fmt
+
+  test:
+    cmd: deno test --reload --importmap=./import_map.json --coverage=./cov_profile
+
+  cov:
+    cmd: deno coverage ./cov_profile
+
+  compile:
+    cmd: deno compile -o ./dist/main --unstable --allow-env=PORT --allow-net ./src/main.ts
