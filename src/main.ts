@@ -30,25 +30,30 @@ export const findDocument = async (documentId: string) => {
 
 router.get("/docs/:id/view", async (context) => {
   const documentId = context.params["id"];
+  /*
   const document = await findDocument(documentId);
 
   if (!document) {
     context.response.status = 404;
     return;
   }
+  */
   const ws = await context.upgrade();
   await addWebSocketToView(ws, { documentId });
 });
 
 router.get("/docs/:id/edit", async (context) => {
   const documentId = context.params["id"];
+  /*
   const document = await findDocument(documentId);
 
   if (!document) {
     context.response.status = 404;
     return;
   }
+  */
   const ws = await context.upgrade();
+  await addWebSocketToView(ws, { documentId });
   await addWebSocketToEdit(ws, { documentId });
 });
 
@@ -64,5 +69,3 @@ await app.listen({
   port: parseInt(Deno.env.get("PORT") || "8000", 10),
 });
 console.log(bold("Finished."));
-
-import "./mongoClient.ts";

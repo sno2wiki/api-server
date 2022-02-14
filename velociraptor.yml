@@ -3,7 +3,7 @@ scripts:
     cmd: |
       deno run --watch \
       --allow-net \
-      --allow-env=PORT,MONGO_URI,REDIS_URI \
+      --allow-env=PORT,RABBITMQ_URI \
       --importmap=./import_map.json \
       ./src/main.ts
 
