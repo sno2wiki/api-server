@@ -28,13 +28,13 @@ export const addWebSocket = (
   ws: WebSocket,
   { documentId }: { documentId: string },
 ) => {
-  ws.addEventListener("open", () => {
-    if (!socketsMap.has(documentId)) {
-      socketsMap.set(documentId, new Set([ws]));
-    } else {
-      socketsMap.get(documentId)!.add(ws);
-    }
-  });
+  ws.addEventListener(
+    "open",
+    () => {
+      if (!socketsMap.has(documentId)) socketsMap.set(documentId, new Set([ws]));
+      else socketsMap.get(documentId)!.add(ws);
+    },
+  );
 
   ws.addEventListener(
     "message",
@@ -46,7 +46,7 @@ export const addWebSocket = (
           await channel.publish(
             { exchange: "join", routingKey: "join." + documentId },
             { contentType: "application/json" },
-            new TextEncoder().encode(JSON.stringify({ userId })),
+            new TextEncoder().encode(JSON.stringify({ userId, documentId })),
           );
           break;
         }
