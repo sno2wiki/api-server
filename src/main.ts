@@ -7,11 +7,6 @@ import { addWebSocket as addWebSocketToView } from "./view/mod.ts";
 const app = new Application();
 const router = new Router();
 
-const lackEnvs = ["REDIS_URI", "MONGO_URI"].filter((key) => !Deno.env.get(key));
-if (0 < lackEnvs.length) {
-  throw new Error(`Necessary environment variables (${lackEnvs.join(", ")}) was not passed.`);
-}
-
 export const findDocument = async (documentId: string) => {
   const mongoClient = new MongoClient();
   await mongoClient.connect(Deno.env.get("MONGO_URI")!);
