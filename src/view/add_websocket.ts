@@ -9,15 +9,17 @@ await channel.declareExchange({ exchange: "view", type: "topic", durable: true }
 await channel.declareQueue({ queue: "view", durable: true });
 await channel.bindQueue({ exchange: "view", queue: "view", routingKey: "view.*" });
 
+await channel.declareExchange({ exchange: "save", type: "topic", durable: true });
+await channel.declareQueue({ queue: "save", durable: true });
+await channel.bindQueue({ exchange: "save", queue: "save", routingKey: "save.*" });
+
 await channel.consume(
   { queue: "view" },
   async (args, props, data) => {
     const { documentId, lines, head } = JSON.parse(new TextDecoder().decode(data));
     socketsMap.get(documentId)?.forEach((ws) => {
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify(
-          { type: "PULL_DOCUMENT", lines, head },
-        ));
+        ws.send(JSON.stringify({ type: "PULL_DOCUMENT", lines, head }));
       }
     });
     await channel.ack({ deliveryTag: args.deliveryTag });
@@ -54,7 +56,14 @@ export const addWebSocket = (
     },
   );
 
-  ws.addEventListener("close", () => {
+  ws.addEventListener("close", async () => {
     socketsMap.get(documentId)?.delete(ws);
+    if (socketsMap.get(documentId)?.size === 0) {
+      await channel.publish(
+        { exchange: "save", routingKey: "save." + documentId },
+        { contentType: "application/json" },
+        new TextEncoder().encode(JSON.stringify({ documentId })),
+      );
+    }
   });
 };
