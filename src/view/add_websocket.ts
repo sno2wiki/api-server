@@ -7,7 +7,7 @@ const channel = await conn.openChannel();
 
 await channel.declareExchange({ exchange: "view", type: "topic", durable: true });
 await channel.declareQueue({ queue: "view", durable: true });
-await channel.bindQueue({ exchange: "view", queue: "join", routingKey: "view.*" });
+await channel.bindQueue({ exchange: "view", queue: "view", routingKey: "view.*" });
 
 await channel.consume(
   { queue: "view" },
