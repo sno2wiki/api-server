@@ -30,28 +30,22 @@ export const findDocument = async (documentId: string) => {
 
 router.get("/docs/:id/view", async (context) => {
   const documentId = context.params["id"];
-  /*
-  const document = await findDocument(documentId);
-
-  if (!document) {
-    context.response.status = 404;
+  if (!Bson.ObjectId.isValid(documentId)) {
+    context.response.status = 400;
     return;
   }
-  */
+
   const ws = await context.upgrade();
   await addWebSocketToView(ws, { documentId });
 });
 
 router.get("/docs/:id/edit", async (context) => {
   const documentId = context.params["id"];
-  /*
-  const document = await findDocument(documentId);
-
-  if (!document) {
-    context.response.status = 404;
+  if (!Bson.ObjectId.isValid(documentId)) {
+    context.response.status = 400;
     return;
   }
-  */
+
   const ws = await context.upgrade();
   await addWebSocketToView(ws, { documentId });
   await addWebSocketToEdit(ws, { documentId });
