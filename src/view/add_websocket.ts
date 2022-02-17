@@ -44,11 +44,10 @@ export const addWebSocket = (
       const data = JSON.parse(event.data);
       switch (data.type) {
         case "JOIN": {
-          const { userId } = data;
           await channel.publish(
             { exchange: "join", routingKey: "join." + documentId },
             { contentType: "application/json" },
-            new TextEncoder().encode(JSON.stringify({ userId, documentId })),
+            new TextEncoder().encode(JSON.stringify({ documentId })),
           );
           break;
         }
