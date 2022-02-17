@@ -16,7 +16,6 @@ export const publishTicket = async (
       documentId: payload.documentId,
       userId: payload.userId,
       publishedAt: new Date(),
-      expired: false,
     });
     return { status: "ok", ticket: ticket };
   } catch (err) {
@@ -45,10 +44,8 @@ export const expireTicket = async (ticket: string): Promise<
   await mongo
     .database()
     .collection("tickets")
-    .updateOne(
+    .deleteOne(
       { ticket: ticket },
-      { $set: { expired: true } },
-      { upsert: false, ignoreUndefined: true },
     );
   return { status: "ok" };
 };
