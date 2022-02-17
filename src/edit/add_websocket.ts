@@ -1,6 +1,6 @@
 import { connect } from "amqp";
 
-import { validateTicket } from "../auth/mod.ts";
+import { expireTicket, validateTicket } from "../auth/mod.ts";
 const conn = await connect(Deno.env.get("RABBITMQ_URI")!);
 const channel = await conn.openChannel();
 
@@ -12,6 +12,8 @@ await channel.declareExchange({ exchange: "edit", type: "topic", durable: true }
 await channel.declareQueue({ queue: "edit", durable: true });
 await channel.bindQueue({ exchange: "edit", queue: "edit", routingKey: "edit.*" });
 export const addWebSocket = (ws: WebSocket, { documentId }: { documentId: string }) => {
+  let ticket: null | string = null;
+
   ws.addEventListener(
     "open",
     async () => {
@@ -23,8 +25,15 @@ export const addWebSocket = (ws: WebSocket, { documentId }: { documentId: string
     async (event) => {
       const data = JSON.parse(event.data);
       switch (data.type) {
+        case "JOIN": {
+          const { ticket: sendTicket } = data;
+          ticket = sendTicket;
+          break;
+        }
         case "PUSH_COMMITS": {
-          const { ticket, commits, lines } = data;
+          if (!ticket) break;
+
+          const { commits, lines } = data;
           const ticketResult = await validateTicket(ticket);
 
           if (ticketResult.status === "bad") {
@@ -44,5 +53,6 @@ export const addWebSocket = (ws: WebSocket, { documentId }: { documentId: string
   );
 
   ws.addEventListener("close", async () => {
+    if (ticket) await expireTicket(ticket);
   });
 };

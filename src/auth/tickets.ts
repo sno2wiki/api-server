@@ -37,3 +37,18 @@ export const validateTicket = async (ticket: string): Promise<
     return { status: "ok", payload: { userId } };
   }
 };
+
+export const expireTicket = async (ticket: string): Promise<
+  | { status: "bad" }
+  | { status: "ok" }
+> => {
+  await mongo
+    .database()
+    .collection("tickets")
+    .updateOne(
+      { ticket: ticket },
+      { $set: { expired: true } },
+      { upsert: false, ignoreUndefined: true },
+    );
+  return { status: "ok" };
+};

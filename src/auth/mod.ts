@@ -1,6 +1,6 @@
 import { MongoClient } from "mongo";
 
-export { publishTicket, validateTicket } from "./tickets.ts";
+export { expireTicket, publishTicket, validateTicket } from "./tickets.ts";
 export const extractBearerToken = (authorization: string): string | null => {
   if (
     authorization.startsWith("Bearer ") ||
