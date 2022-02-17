@@ -1,6 +1,7 @@
 import { bold, yellow } from "std/fmt/colors";
 import { Application, Router } from "oak";
 import { Bson, MongoClient } from "mongo";
+import { oakCors } from "cors";
 import { addWebSocket as addWebSocketToEdit } from "./edit/mod.ts";
 import { addWebSocket as addWebSocketToView } from "./view/mod.ts";
 
@@ -46,7 +47,7 @@ router.get("/docs/:id/edit", async (context) => {
   await addWebSocketToEdit(ws, { documentId });
 });
 
-// app.use(oakCors());
+app.use(oakCors());
 app.use(router.routes());
 app.use(router.allowedMethods());
 app.addEventListener("listen", ({ hostname, port, serverType }) => {
