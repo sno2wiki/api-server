@@ -1,14 +1,6 @@
 import { MongoClient } from "mongo";
-export const publishTicket = async (
-  mongoClient: MongoClient,
-  payload: { documentId: string; userId: string },
-): Promise<
-  | { status: "bad" }
-  | { status: "ok"; ticket: string }
-> => {
-  return { status: "ok", ticket: payload.documentId + "." + payload.userId + "." + Date.now() };
-};
 
+export { publishTicket } from "./tickets.ts";
 export const extractBearerToken = (authorization: string): string | null => {
   if (
     authorization.startsWith("Bearer ") ||
