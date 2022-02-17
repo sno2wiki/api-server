@@ -1,5 +1,6 @@
 import { connect } from "amqp";
 
+import { validateTicket } from "../auth/mod.ts";
 const conn = await connect(Deno.env.get("RABBITMQ_URI")!);
 const channel = await conn.openChannel();
 
@@ -23,12 +24,19 @@ export const addWebSocket = (ws: WebSocket, { documentId }: { documentId: string
       const data = JSON.parse(event.data);
       switch (data.type) {
         case "PUSH_COMMITS": {
-          const { commits, lines } = data;
-          await channel.publish(
-            { exchange: "edit", routingKey: "edit." + documentId },
-            { contentType: "application/json" },
-            new TextEncoder().encode(JSON.stringify({ documentId, lines, commits })),
-          );
+          const { ticket, commits, lines } = data;
+          const ticketResult = await validateTicket(ticket);
+
+          if (ticketResult.status === "bad") {
+            ws.send(JSON.stringify({ type: "ERROR", message: "Invalid ticket" }));
+          } else {
+            const { userId } = ticketResult.payload;
+            await channel.publish(
+              { exchange: "edit", routingKey: "edit." + documentId },
+              { contentType: "application/json" },
+              new TextEncoder().encode(JSON.stringify({ documentId, userId, lines, commits })),
+            );
+          }
           break;
         }
       }

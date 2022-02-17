@@ -71,7 +71,6 @@ router.get("/docs/:id/check", async (context) => {
     }
 
     const ticketResult = await publishTicket(
-      mongoClient,
       { documentId: documentId, userId: authResult.credentials.userId },
     );
     if (ticketResult.status === "bad") {

@@ -1,7 +1,9 @@
 import { MongoClient } from "mongo";
 
+const mongo = new MongoClient();
+await mongo.connect(Deno.env.get("MONGO_URI")!);
+
 export const publishTicket = async (
-  mongo: MongoClient,
   payload: { documentId: string; userId: string },
 ): Promise<
   | { status: "bad" }
@@ -20,5 +22,18 @@ export const publishTicket = async (
   } catch (err) {
     console.error(err);
     return { status: "bad" };
+  }
+};
+
+export const validateTicket = async (ticket: string): Promise<
+  | { status: "bad" }
+  | { status: "ok"; payload: { userId: string } }
+> => {
+  const ticketDoc = await mongo.database().collection("tickets").findOne({ ticket: ticket });
+
+  if (!ticketDoc) return { status: "bad" };
+  else {
+    const { userId } = ticketDoc;
+    return { status: "ok", payload: { userId } };
   }
 };
