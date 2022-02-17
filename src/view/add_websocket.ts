@@ -9,10 +9,6 @@ await channel.declareExchange({ exchange: "view", type: "topic", durable: true }
 await channel.declareQueue({ queue: "view", durable: true });
 await channel.bindQueue({ exchange: "view", queue: "view", routingKey: "view.*" });
 
-await channel.declareExchange({ exchange: "save", type: "topic", durable: true });
-await channel.declareQueue({ queue: "save", durable: true });
-await channel.bindQueue({ exchange: "save", queue: "save", routingKey: "save.*" });
-
 await channel.consume(
   { queue: "view" },
   async (args, props, data) => {
@@ -30,39 +26,26 @@ export const addWebSocket = (
   ws: WebSocket,
   { documentId }: { documentId: string },
 ) => {
-  ws.addEventListener(
-    "open",
-    () => {
-      if (!socketsMap.has(documentId)) socketsMap.set(documentId, new Set([ws]));
-      else socketsMap.get(documentId)!.add(ws);
-    },
-  );
+  if (!socketsMap.has(documentId)) socketsMap.set(documentId, new Set());
+  ws.addEventListener("open", () => {
+    socketsMap.get(documentId)!.add(ws);
+  });
 
-  ws.addEventListener(
-    "message",
-    async (event) => {
-      const data = JSON.parse(event.data);
-      switch (data.type) {
-        case "JOIN": {
-          await channel.publish(
-            { exchange: "join", routingKey: "join." + documentId },
-            { contentType: "application/json" },
-            new TextEncoder().encode(JSON.stringify({ documentId })),
-          );
-          break;
-        }
+  ws.addEventListener("message", async (event) => {
+    const data = JSON.parse(event.data);
+    switch (data.type) {
+      case "JOIN": {
+        await channel.publish(
+          { exchange: "join", routingKey: "join." + documentId },
+          { contentType: "application/json" },
+          new TextEncoder().encode(JSON.stringify({ documentId })),
+        );
+        break;
       }
-    },
-  );
-
-  ws.addEventListener("close", async () => {
-    socketsMap.get(documentId)?.delete(ws);
-    if (socketsMap.get(documentId)?.size === 0) {
-      await channel.publish(
-        { exchange: "save", routingKey: "save." + documentId },
-        { contentType: "application/json" },
-        new TextEncoder().encode(JSON.stringify({ documentId })),
-      );
     }
+  });
+
+  ws.addEventListener("close", () => {
+    socketsMap.get(documentId)?.delete(ws);
   });
 };
