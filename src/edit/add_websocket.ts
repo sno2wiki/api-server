@@ -61,12 +61,10 @@ export const addWebSocket = (ws: WebSocket, { documentId }: { documentId: string
     if (storedTicket) await expireTicket(storedTicket);
 
     socketsMap.get(documentId)?.delete(ws);
-    if (socketsMap.get(documentId)?.size === 0) {
-      await channel.publish(
-        { exchange: "save", routingKey: "save." + documentId },
-        { contentType: "application/json" },
-        new TextEncoder().encode(JSON.stringify({ documentId })),
-      );
-    }
+    await channel.publish(
+      { exchange: "save", routingKey: "save." + documentId },
+      { contentType: "application/json" },
+      new TextEncoder().encode(JSON.stringify({ documentId })),
+    );
   });
 };
