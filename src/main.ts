@@ -86,6 +86,33 @@ router.get("/docs/:id/check", async (context) => {
   }
 });
 
+router.get("/redirects/_/:term", async (context) => {
+  const term = context.params["term"];
+
+  const documents = await mongoClient.database().collection("documents").aggregate(
+    [
+      { "$match": { "redirects.term": term } },
+      { "$project": { "_id": 0, "id": "$_id", "lines": true } },
+    ],
+  ).toArray();
+  context.response.body = { documents };
+  return;
+});
+
+router.get("/redirects/:context/:term", async (context) => {
+  const ctx = context.params["context"];
+  const term = context.params["term"];
+
+  const documents = await mongoClient.database().collection("documents").aggregate(
+    [
+      { "$match": { "redirects.context": ctx, "redirects.term": term } },
+      { "$project": { "_id": false, "id": "$_id", "lines": true } },
+    ],
+  ).toArray();
+  context.response.body = { documents };
+  return;
+});
+
 app.use(oakCors());
 app.use(router.routes());
 app.use(router.allowedMethods());
