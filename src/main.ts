@@ -1,23 +1,13 @@
 import { bold, yellow } from "std/fmt/colors";
 import { Application, Router } from "oak";
-import { Bson } from "mongo";
 import { oakCors } from "cors";
+import { validate } from "./auth/mod.ts";
 import { publishTicket } from "./mongo/mod.ts";
 import { handleWS } from "./handle_ws.ts";
 import { isValidDocumentId } from "./validators.ts";
 
 const app = new Application();
 const router = new Router();
-export const extractBearerToken = (authorization: string): string | null => {
-  if (
-    authorization.startsWith("Bearer ") ||
-    authorization.startsWith("bearer ")
-  ) {
-    return authorization.slice(7);
-  } else {
-    return null;
-  }
-};
 
 router.get("/docs/:id/edit", async (context) => {
   const documentId = context.params["id"];
@@ -43,9 +33,13 @@ router.get("/docs/:id/enter", async (context) => {
     context.response.body = {};
     return;
   } else {
-    const bearerToken = extractBearerToken(authorization);
+    const authResult = validate(authorization);
+    if (authResult.status === "bad") {
+      context.response.status = 403;
+      return;
+    }
 
-    const { ticket } = await publishTicket(documentId, "sno2wman");
+    const { ticket } = await publishTicket(documentId, authResult.payload.userId);
 
     context.response.status = 200;
     context.response.body = { ticket };
