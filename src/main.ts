@@ -3,7 +3,7 @@ import { Application, Router } from "oak";
 import { oakCors } from "cors";
 import { validate } from "./auth.ts";
 import { publishTicket } from "./mongo.ts";
-import { handleWS } from "./handle_ws.ts";
+import { handleEditWS } from "./handle_edit_ws.ts";
 import { isValidDocumentId } from "./validators.ts";
 
 const app = new Application();
@@ -17,7 +17,7 @@ router.get("/docs/:id/edit", async (context) => {
   }
 
   const ws = await context.upgrade();
-  handleWS(ws, { documentId });
+  handleEditWS(ws, { documentId });
 });
 
 router.get("/docs/:id/enter", async (context) => {

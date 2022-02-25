@@ -3,7 +3,7 @@ import { deleteTicket, findDoc, findTicket, updateDocValue } from "./mongo.ts";
 const socketsMap = new Map<string, Set<WebSocket>>();
 const valMap = new Map<string, unknown[]>();
 
-export const handleWS = (ws: WebSocket, { documentId }: { documentId: string }) => {
+export const handleEditWS = (ws: WebSocket, { documentId }: { documentId: string }) => {
   if (!socketsMap.has(documentId)) socketsMap.set(documentId, new Set());
 
   let userId: string | null = null;
