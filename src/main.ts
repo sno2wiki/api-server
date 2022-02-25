@@ -30,7 +30,7 @@ router.get("/docs/:id/enter", async (context) => {
   const authorization = context.request.headers.get("Authorization");
   if (!authorization) {
     context.response.status = 200;
-    context.response.body = {};
+    context.response.body = { ticket: null };
     return;
   } else {
     const authResult = validate(authorization);
