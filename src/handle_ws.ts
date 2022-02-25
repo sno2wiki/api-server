@@ -1,4 +1,4 @@
-import { deleteTicket, findDoc, findTicket, updateDocValue } from "./mongo/mod.ts";
+import { deleteTicket, findDoc, findTicket, updateDocValue } from "./mongo.ts";
 
 const socketsMap = new Map<string, Set<WebSocket>>();
 const valMap = new Map<string, unknown[]>();

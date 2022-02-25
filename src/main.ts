@@ -1,8 +1,8 @@
 import { bold, yellow } from "std/fmt/colors";
 import { Application, Router } from "oak";
 import { oakCors } from "cors";
-import { validate } from "./auth/mod.ts";
-import { publishTicket } from "./mongo/mod.ts";
+import { validate } from "./auth.ts";
+import { publishTicket } from "./mongo.ts";
 import { handleWS } from "./handle_ws.ts";
 import { isValidDocumentId } from "./validators.ts";
 
