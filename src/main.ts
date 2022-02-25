@@ -4,6 +4,7 @@ import { Bson } from "mongo";
 import { oakCors } from "cors";
 import { publishTicket } from "./mongo/mod.ts";
 import { handleWS } from "./handle_ws.ts";
+import { isValidDocumentId } from "./validators.ts";
 
 const app = new Application();
 const router = new Router();
@@ -20,7 +21,7 @@ export const extractBearerToken = (authorization: string): string | null => {
 
 router.get("/docs/:id/edit", async (context) => {
   const documentId = context.params["id"];
-  if (!Bson.ObjectId.isValid(documentId)) {
+  if (!isValidDocumentId(documentId)) {
     context.response.status = 400;
     return;
   }
@@ -31,7 +32,7 @@ router.get("/docs/:id/edit", async (context) => {
 
 router.get("/docs/:id/enter", async (context) => {
   const documentId = context.params["id"];
-  if (!Bson.ObjectId.isValid(documentId)) {
+  if (!isValidDocumentId(documentId)) {
     context.response.status = 400;
     return;
   }
