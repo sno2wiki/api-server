@@ -1,13 +1,11 @@
 import { bold, yellow } from "std/fmt/colors";
 import { Application, Router } from "oak";
-import { Bson, MongoClient } from "mongo";
+import { Bson } from "mongo";
 import { oakCors } from "cors";
+import { deleteTicket, findDoc, findTicket, publishTicket, updateDocValue } from "./mongo/mod.ts";
 
 const app = new Application();
 const router = new Router();
-
-const mongoClient = new MongoClient();
-await mongoClient.connect(Deno.env.get("MONGO_URI")!);
 
 const socketsMap = new Map<string, Set<WebSocket>>();
 const valMap = new Map<string, unknown[]>();
@@ -39,16 +37,13 @@ export const handleWS = (ws: WebSocket, { documentId }: { documentId: string }) 
           /* authen */
           try {
             const { ticket } = data;
-            const result = await mongoClient.database().collection("tickets").findOne(
-              { ticket },
-              { projection: { "userId": true } },
-            );
+            const result = await findTicket(ticket);
             if (!result) {
               ws.send(JSON.stringify({ type: "FORCE_EXIT" }));
               return;
             }
             userId = result.userId;
-            await mongoClient.database().collection("tickets").deleteOne({ ticket });
+            await deleteTicket(ticket);
           } catch (err) {
             ws.send(JSON.stringify({ type: "FORCE_EXIT" }));
             return;
@@ -61,10 +56,7 @@ export const handleWS = (ws: WebSocket, { documentId }: { documentId: string }) 
           }
 
           try {
-            const stored = await mongoClient.database().collection("docs").findOne(
-              { _id: new Bson.ObjectId(documentId) },
-              { projection: { "value": true } },
-            );
+            const stored = await findDoc(documentId);
             if (stored && stored.value) {
               const value = stored.value;
               valMap.set(documentId, value);
@@ -103,12 +95,8 @@ export const handleWS = (ws: WebSocket, { documentId }: { documentId: string }) 
     socketsMap.get(documentId)!.delete(ws);
 
     const value = valMap.get(documentId);
-    if (value) {
-      await mongoClient.database().collection("docs").updateOne(
-        { _id: new Bson.ObjectId(documentId) },
-        { $set: { value: (value) }, $addToSet: { editors: userId } },
-        { upsert: true },
-      );
+    if (userId && value) {
+      await updateDocValue(documentId, { value, userId });
     }
   });
 };
@@ -139,13 +127,7 @@ router.get("/docs/:id/enter", async (context) => {
   } else {
     const bearerToken = extractBearerToken(authorization);
 
-    const ticket = crypto.randomUUID();
-    await mongoClient.database().collection("tickets").insertOne({
-      ticket: ticket,
-      documentId: documentId,
-      userId: "sno2wman",
-      publishedAt: new Date(),
-    });
+    const { ticket } = await publishTicket(documentId, "sno2wman");
 
     context.response.status = 200;
     context.response.body = { ticket };
