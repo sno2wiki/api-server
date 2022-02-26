@@ -2,7 +2,7 @@ import { bold, yellow } from "std/fmt/colors";
 import { Application, Router } from "oak";
 import { oakCors } from "cors";
 import { validate } from "./auth.ts";
-import { findRedirects, publishTicket } from "./mongo.ts";
+import { createNewDocFromRedirect, findRedirects, publishTicket } from "./mongo.ts";
 import { handleEditWS, handleViewWS } from "./handle_ws.ts";
 import { isValidDocumentId } from "./validators.ts";
 
@@ -83,6 +83,23 @@ router.get("/redirects/:context/:term", async (context) => {
   const documents = await findRedirects(contextParam, termParam);
   context.response.body = { documents };
   return;
+});
+
+router.get("/new/doc", async (context) => {
+  const paramContext = context.request.url.searchParams.get("context");
+  const paramTerm = context.request.url.searchParams.get("term");
+
+  if (
+    !paramTerm ||
+    !paramContext ||
+    paramContext === "_"
+  ) {
+    context.throw(400);
+    return;
+  }
+
+  const { id } = await createNewDocFromRedirect(paramContext, paramTerm);
+  context.response.body = { id };
 });
 
 app.use(oakCors());

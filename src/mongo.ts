@@ -48,6 +48,16 @@ export const updateDocValue = (docId: string, { value, userId }: { value: unknow
   );
 };
 
+export const createNewDocFromRedirect = async (context: string, term: string) => {
+  const newDocId = await docsCollection.insertOne(
+    {
+      redirects: [{ context: context, term: term }],
+      createdAt: new Date(),
+    },
+  );
+  return { id: newDocId };
+};
+
 export const findRedirects = (context: string | null, term: string) => {
   return docsCollection.aggregate(
     [
