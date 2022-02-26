@@ -3,11 +3,27 @@ import { Application, Router } from "oak";
 import { oakCors } from "cors";
 import { validate } from "./auth.ts";
 import { publishTicket } from "./mongo.ts";
-import { handleEditWS } from "./handle_edit_ws.ts";
+import { handleEditWS, handleViewWS } from "./handle_ws.ts";
 import { isValidDocumentId } from "./validators.ts";
 
 const app = new Application();
 const router = new Router();
+
+router.get("/docs/:id/view", async (context) => {
+  const documentId = context.params["id"];
+  if (!isValidDocumentId(documentId)) {
+    context.response.status = 400;
+    return;
+  }
+
+  try {
+    const ws = await context.upgrade();
+    handleViewWS(ws, { documentId });
+  } catch (error) {
+    console.error(error);
+    context.response.status = 500;
+  }
+});
 
 router.get("/docs/:id/edit", async (context) => {
   const documentId = context.params["id"];
@@ -16,8 +32,13 @@ router.get("/docs/:id/edit", async (context) => {
     return;
   }
 
-  const ws = await context.upgrade();
-  handleEditWS(ws, { documentId });
+  try {
+    const ws = await context.upgrade();
+    handleEditWS(ws, { documentId });
+  } catch (error) {
+    console.error(error);
+    context.response.status = 500;
+  }
 });
 
 router.get("/docs/:id/enter", async (context) => {

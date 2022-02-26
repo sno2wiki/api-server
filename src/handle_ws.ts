@@ -1,15 +1,29 @@
 import { deleteTicket, findDoc, findTicket, updateDocValue } from "./mongo.ts";
 
-const socketsMap = new Map<string, Set<WebSocket>>();
 const valMap = new Map<string, unknown[]>();
 
+const editWSMap = new Map<string, Set<WebSocket>>();
+const viewWSMap = new Map<string, Set<WebSocket>>();
+
+const broadcastView = (documentId: string) => {
+  const value = valMap.get(documentId);
+  const sockets = viewWSMap.get(documentId);
+  if (!value || !sockets) return;
+
+  const sendData = JSON.stringify({ type: "PULL_VAL", value });
+  sockets.forEach((to) => {
+    if (to.readyState !== WebSocket.OPEN) return;
+    to.send(sendData);
+  });
+};
+
 export const handleEditWS = (ws: WebSocket, { documentId }: { documentId: string }) => {
-  if (!socketsMap.has(documentId)) socketsMap.set(documentId, new Set());
+  if (!editWSMap.has(documentId)) editWSMap.set(documentId, new Set());
 
   let userId: string | null = null;
 
   ws.addEventListener("open", () => {
-    socketsMap.get(documentId)!.add(ws);
+    editWSMap.get(documentId)!.add(ws);
   });
 
   ws.addEventListener("message", async (event) => {
@@ -63,23 +77,47 @@ export const handleEditWS = (ws: WebSocket, { documentId }: { documentId: string
           }
 
           const { value } = data;
-          const sendData = JSON.stringify({ type: "PULL_VAL", value, userId });
-          socketsMap.get(documentId)!.forEach((to) => {
+          const sendData = JSON.stringify({ type: "PULL_VAL", value });
+          editWSMap.get(documentId)!.forEach((to) => {
             if (ws === to || to.readyState !== WebSocket.OPEN) return;
             to.send(sendData);
           });
           valMap.set(documentId, value);
+          broadcastView(documentId);
         }
         break;
     }
   });
 
   ws.addEventListener("close", async () => {
-    socketsMap.get(documentId)!.delete(ws);
+    editWSMap.get(documentId)!.delete(ws);
 
     const value = valMap.get(documentId);
     if (userId && value) {
       await updateDocValue(documentId, { value, userId });
     }
+  });
+};
+
+export const handleViewWS = (ws: WebSocket, { documentId }: { documentId: string }) => {
+  if (!viewWSMap.has(documentId)) viewWSMap.set(documentId, new Set());
+
+  ws.addEventListener("open", () => {
+    viewWSMap.get(documentId)!.add(ws);
+  });
+
+  ws.addEventListener("message", (event) => {
+    const data = JSON.parse(event.data);
+    switch (data.type) {
+      case "ENTER":
+        {
+          broadcastView(documentId);
+        }
+        break;
+    }
+  });
+
+  ws.addEventListener("close", () => {
+    viewWSMap.get(documentId)!.delete(ws);
   });
 };
