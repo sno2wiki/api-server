@@ -41,7 +41,10 @@ export const updateDocValue = (docId: string, { value, userId }: { value: unknow
   return docsCollection.updateOne(
     { _id: new Bson.ObjectId(docId) },
     {
-      $set: { value: (value) },
+      $set: {
+        value: (value),
+        updatedAt: new Date(),
+      },
       $addToSet: { editors: userId },
     },
     { upsert: true },
