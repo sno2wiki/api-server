@@ -3,6 +3,8 @@ import { Bson, MongoClient } from "mongo";
 const mongoClient = new MongoClient();
 await mongoClient.connect(Deno.env.get("MONGO_URI")!);
 
+const docsCollection = mongoClient.database().collection("docs");
+
 export const publishTicket = async (docId: string, userId: string) => {
   const ticket = crypto.randomUUID();
 
@@ -50,4 +52,20 @@ export const updateDocValue = (docId: string, { value, userId }: { value: unknow
       },
       { upsert: true },
     );
+};
+
+export const findRedirects = (context: string | null, term: string) => {
+  return docsCollection.aggregate(
+    [
+      {
+        "$match": {
+          "redirects.term": term,
+          ...(context && { "redirects.context": context }),
+        },
+      },
+      {
+        "$project": { "_id": 0, "id": "$_id" },
+      },
+    ],
+  ).toArray();
 };
