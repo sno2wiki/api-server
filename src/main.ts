@@ -2,7 +2,7 @@ import { bold, yellow } from "std/fmt/colors";
 import { Application, Router } from "oak";
 import { oakCors } from "cors";
 import { validate } from "./auth.ts";
-import { createNewDocFromRedirect, findRedirects, publishTicket } from "./mongo.ts";
+import { createNewDocFromRedirect, findDocRedirects, findRedirects, publishTicket } from "./mongo.ts";
 import { handleEditWS, handleViewWS } from "./handle_ws.ts";
 import { isValidDocSlug } from "./doc_slug.ts";
 
@@ -66,6 +66,25 @@ router.get("/docs/:slug/enter", async (context) => {
     context.response.body = { ticket };
     return;
   }
+});
+
+router.get("/docs/:slug/redirects", async (context) => {
+  const docSlug = context.params["slug"];
+
+  if (!isValidDocSlug(docSlug)) {
+    context.throw(400);
+    return;
+  }
+
+  const result = await findDocRedirects(docSlug);
+  if (!result) {
+    context.response.status = 200;
+    context.response.body = [];
+    return;
+  }
+  context.response.status = 200;
+  context.response.body = result;
+  return;
 });
 
 router.get("/redirects/_/:term", async (context) => {

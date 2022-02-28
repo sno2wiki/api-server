@@ -38,6 +38,23 @@ export const findDoc = (slug: string) => {
   );
 };
 
+export const findDocRedirects = async (slug: string) => {
+  const result = await docsCollection.findOne(
+    { slug: slug },
+    { projection: { "_id": 0, "redirects": true } },
+  );
+
+  if (!result) {
+    return {
+      redirects: [],
+    };
+  }
+
+  return {
+    redirects: result.redirects,
+  };
+};
+
 export const updateDocValue = (slug: string, { value, userId }: { value: unknown[]; userId: string }) => {
   return docsCollection.updateOne(
     { slug },
