@@ -77,13 +77,8 @@ router.get("/docs/:slug/redirects", async (context) => {
   }
 
   const result = await findDocRedirects(docSlug);
-  if (!result) {
-    context.response.status = 200;
-    context.response.body = [];
-    return;
-  }
   context.response.status = 200;
-  context.response.body = result;
+  context.response.body = { redirects: result };
   return;
 });
 

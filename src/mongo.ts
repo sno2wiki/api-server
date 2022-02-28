@@ -39,21 +39,16 @@ export const findDoc = (slug: string) => {
   );
 };
 
-export const findDocRedirects = async (slug: string) => {
-  const result = await docsCollection.findOne(
-    { slug: slug },
-    { projection: { "_id": 0, "redirects": true } },
-  );
+export const findDocRedirects = async (slug: string): Promise<{ context: string; term: string }[]> => {
+  const result = await docsCollection.aggregate<{ context: string; term: string }>([
+    { "$match": { "slug": slug } },
+    { "$lookup": { "from": "redirects", "localField": "_id", "foreignField": "doc", "as": "redirects" } },
+    { "$unwind": { "path": "$redirects" } },
+    { "$replaceRoot": { "newRoot": "$redirects" } },
+    { "$project": { "context": true, "term": true } },
+  ]).toArray();
 
-  if (!result) {
-    return {
-      redirects: [],
-    };
-  }
-
-  return {
-    redirects: result.redirects,
-  };
+  return result;
 };
 
 export const updateDocValue = (slug: string, { value, userId }: { value: unknown[]; userId: string }) => {
