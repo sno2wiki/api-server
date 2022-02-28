@@ -4,46 +4,46 @@ import { oakCors } from "cors";
 import { validate } from "./auth.ts";
 import { createNewDocFromRedirect, findRedirects, publishTicket } from "./mongo.ts";
 import { handleEditWS, handleViewWS } from "./handle_ws.ts";
-import { isValidDocumentId } from "./validators.ts";
+import { isValidDocSlug } from "./doc_slug.ts";
 
 const app = new Application();
 const router = new Router();
 
-router.get("/docs/:id/view", async (context) => {
-  const documentId = context.params["id"];
-  if (!isValidDocumentId(documentId)) {
+router.get("/docs/:slug/view", async (context) => {
+  const docSlug = context.params["slug"];
+  if (!isValidDocSlug(docSlug)) {
     context.response.status = 400;
     return;
   }
 
   try {
     const ws = await context.upgrade();
-    handleViewWS(ws, { documentId });
+    handleViewWS(ws, { docSlug: docSlug });
   } catch (error) {
     console.error(error);
     context.response.status = 500;
   }
 });
 
-router.get("/docs/:id/edit", async (context) => {
-  const documentId = context.params["id"];
-  if (!isValidDocumentId(documentId)) {
+router.get("/docs/:slug/edit", async (context) => {
+  const docSlug = context.params["slug"];
+  if (!isValidDocSlug(docSlug)) {
     context.response.status = 400;
     return;
   }
 
   try {
     const ws = await context.upgrade();
-    handleEditWS(ws, { documentId });
+    handleEditWS(ws, { docSlug: docSlug });
   } catch (error) {
     console.error(error);
     context.response.status = 500;
   }
 });
 
-router.get("/docs/:id/enter", async (context) => {
-  const documentId = context.params["id"];
-  if (!isValidDocumentId(documentId)) {
+router.get("/docs/:slug/enter", async (context) => {
+  const docSlug = context.params["slug"];
+  if (!isValidDocSlug(docSlug)) {
     context.response.status = 400;
     return;
   }
@@ -60,7 +60,7 @@ router.get("/docs/:id/enter", async (context) => {
       return;
     }
 
-    const { ticket } = await publishTicket(documentId, authResult.payload.userId);
+    const { ticket } = await publishTicket(docSlug, authResult.payload.userId);
 
     context.response.status = 200;
     context.response.body = { ticket };
@@ -98,8 +98,8 @@ router.get("/new/doc", async (context) => {
     return;
   }
 
-  const { id } = await createNewDocFromRedirect(paramContext, paramTerm);
-  context.response.body = { id };
+  const { slug } = await createNewDocFromRedirect(paramContext, paramTerm);
+  context.response.body = { slug };
 });
 
 app.use(oakCors());

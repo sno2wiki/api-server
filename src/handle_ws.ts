@@ -17,13 +17,13 @@ const broadcastView = (documentId: string) => {
   });
 };
 
-export const handleEditWS = (ws: WebSocket, { documentId }: { documentId: string }) => {
-  if (!editWSMap.has(documentId)) editWSMap.set(documentId, new Set());
+export const handleEditWS = (ws: WebSocket, { docSlug }: { docSlug: string }) => {
+  if (!editWSMap.has(docSlug)) editWSMap.set(docSlug, new Set());
 
   let userId: string | null = null;
 
   ws.addEventListener("open", () => {
-    editWSMap.get(documentId)!.add(ws);
+    editWSMap.get(docSlug)!.add(ws);
   });
 
   ws.addEventListener("message", async (event) => {
@@ -47,20 +47,20 @@ export const handleEditWS = (ws: WebSocket, { documentId }: { documentId: string
           }
 
           /* stored  */
-          if (valMap.has(documentId)) {
-            ws.send(JSON.stringify({ type: "PULL_VAL", value: (valMap.get(documentId)!), userId }));
+          if (valMap.has(docSlug)) {
+            ws.send(JSON.stringify({ type: "PULL_VAL", value: (valMap.get(docSlug)!), userId }));
             return;
           }
 
           try {
-            const stored = await findDoc(documentId);
+            const stored = await findDoc(docSlug);
             if (stored && stored.value) {
               const value = stored.value;
-              valMap.set(documentId, value);
+              valMap.set(docSlug, value);
               ws.send(JSON.stringify({ type: "PULL_VAL", value: value, userId }));
             } else {
               const value = [{ "type": "paragraph", children: [{ text: "" }] }];
-              valMap.set(documentId, value);
+              valMap.set(docSlug, value);
               ws.send(JSON.stringify({ type: "PULL_VAL", value: value, userId }));
             }
           } catch (err) {
@@ -78,32 +78,32 @@ export const handleEditWS = (ws: WebSocket, { documentId }: { documentId: string
 
           const { value } = data;
           const sendData = JSON.stringify({ type: "PULL_VAL", value });
-          editWSMap.get(documentId)!.forEach((to) => {
+          editWSMap.get(docSlug)!.forEach((to) => {
             if (ws === to || to.readyState !== WebSocket.OPEN) return;
             to.send(sendData);
           });
-          valMap.set(documentId, value);
-          broadcastView(documentId);
+          valMap.set(docSlug, value);
+          broadcastView(docSlug);
         }
         break;
     }
   });
 
   ws.addEventListener("close", async () => {
-    editWSMap.get(documentId)!.delete(ws);
+    editWSMap.get(docSlug)!.delete(ws);
 
-    const value = valMap.get(documentId);
+    const value = valMap.get(docSlug);
     if (userId && value) {
-      await updateDocValue(documentId, { value, userId });
+      await updateDocValue(docSlug, { value, userId });
     }
   });
 };
 
-export const handleViewWS = (ws: WebSocket, { documentId }: { documentId: string }) => {
-  if (!viewWSMap.has(documentId)) viewWSMap.set(documentId, new Set());
+export const handleViewWS = (ws: WebSocket, { docSlug }: { docSlug: string }) => {
+  if (!viewWSMap.has(docSlug)) viewWSMap.set(docSlug, new Set());
 
   ws.addEventListener("open", () => {
-    viewWSMap.get(documentId)!.add(ws);
+    viewWSMap.get(docSlug)!.add(ws);
   });
 
   ws.addEventListener("message", (event) => {
@@ -111,13 +111,13 @@ export const handleViewWS = (ws: WebSocket, { documentId }: { documentId: string
     switch (data.type) {
       case "ENTER":
         {
-          broadcastView(documentId);
+          broadcastView(docSlug);
         }
         break;
     }
   });
 
   ws.addEventListener("close", () => {
-    viewWSMap.get(documentId)!.delete(ws);
+    viewWSMap.get(docSlug)!.delete(ws);
   });
 };

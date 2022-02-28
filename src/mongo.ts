@@ -1,3 +1,4 @@
+import { createDocSlug } from "./doc_slug.ts";
 import { Bson, MongoClient } from "mongo";
 
 const mongoClient = new MongoClient();
@@ -6,12 +7,12 @@ await mongoClient.connect(Deno.env.get("MONGO_URI")!);
 const ticketsCollection = mongoClient.database().collection("tickets");
 const docsCollection = mongoClient.database().collection("docs");
 
-export const publishTicket = async (docId: string, userId: string) => {
+export const publishTicket = async (docSlug: string, userId: string) => {
   const ticket = crypto.randomUUID();
 
   await ticketsCollection.insertOne({
     ticket: ticket,
-    documentId: docId,
+    docSlug: docSlug,
     userId: userId,
     publishedAt: new Date(),
   });
@@ -30,16 +31,16 @@ export const deleteTicket = (ticket: string) => {
   );
 };
 
-export const findDoc = (docId: string) => {
+export const findDoc = (slug: string) => {
   return docsCollection.findOne(
-    { _id: new Bson.ObjectId(docId) },
+    { slug: slug },
     { projection: { "value": true } },
   );
 };
 
-export const updateDocValue = (docId: string, { value, userId }: { value: unknown[]; userId: string }) => {
+export const updateDocValue = (slug: string, { value, userId }: { value: unknown[]; userId: string }) => {
   return docsCollection.updateOne(
-    { _id: new Bson.ObjectId(docId) },
+    { slug },
     {
       $set: {
         value: (value),
@@ -52,13 +53,19 @@ export const updateDocValue = (docId: string, { value, userId }: { value: unknow
 };
 
 export const createNewDocFromRedirect = async (context: string, term: string) => {
-  const newDocId = await docsCollection.insertOne(
+  const newDocSlug = createDocSlug();
+
+  await docsCollection.insertOne(
     {
+      slug: newDocSlug,
       redirects: [{ context: context, term: term }],
       createdAt: new Date(),
     },
   );
-  return { id: newDocId };
+
+  return {
+    slug: newDocSlug,
+  };
 };
 
 export const findRedirects = (context: string | null, term: string) => {
