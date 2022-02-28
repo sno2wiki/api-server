@@ -6,6 +6,7 @@ await mongoClient.connect(Deno.env.get("MONGO_URI")!);
 
 const ticketsCollection = mongoClient.database().collection("tickets");
 const docsCollection = mongoClient.database().collection("docs");
+const redirectsCollection = mongoClient.database().collection("redirects");
 
 export const publishTicket = async (docSlug: string, userId: string) => {
   const ticket = crypto.randomUUID();
@@ -85,18 +86,18 @@ export const createNewDocFromRedirect = async (context: string, term: string) =>
   };
 };
 
-export const findRedirects = (context: string | null, term: string) => {
-  return docsCollection.aggregate(
+export const findRedirects = async (context: string | null, term: string): Promise<
+  { slug: string }[]
+> => {
+  const aggregated = await redirectsCollection.aggregate<{ slug: string }>(
     [
-      {
-        "$match": {
-          "redirects.term": term,
-          ...(context && { "redirects.context": context }),
-        },
-      },
-      {
-        "$project": { "_id": 0, "id": "$_id" },
-      },
+      { "$match": { ...(context && { "context": context }), "term": term } },
+      { "$lookup": { "from": "docs", "localField": "doc", "foreignField": "_id", "as": "docs" } },
+      { "$unwind": { "path": "$docs" } },
+      { "$replaceRoot": { "newRoot": "$docs" } },
+      { "$project": { "_id": false, "slug": true } },
+      // { "$lookup": { "from": "redirects", "localField": "_id", "foreignField": "doc", "as": "redirects" } },
     ],
   ).toArray();
+  return aggregated;
 };
