@@ -2,7 +2,13 @@ import { bold, yellow } from "std/fmt/colors";
 import { Application, Router } from "oak";
 import { oakCors } from "cors";
 import { validate } from "./auth.ts";
-import { createNewDocFromRedirect, findDocRedirects, findRedirects, publishTicket } from "./mongo.ts";
+import {
+  createNewDocFromRedirect,
+  createNewRedirect,
+  findDocRedirects,
+  findRedirects,
+  publishTicket,
+} from "./mongo.ts";
 import { handleEditWS, handleViewWS } from "./handle_ws.ts";
 import { isValidDocSlug } from "./doc_slug.ts";
 
@@ -96,6 +102,40 @@ router.get("/redirects/:context/:term", async (context) => {
 
   const documents = await findRedirects(contextParam, termParam);
   context.response.body = { documents };
+  return;
+});
+
+router.get("/redirects/find", async (context) => {
+  const paramContext = context.request.url.searchParams.get("context");
+  const paramTerm = context.request.url.searchParams.get("term");
+
+  if (!paramTerm) {
+    context.throw(400);
+    return;
+  }
+
+  const documents = await findRedirects(paramContext, paramTerm);
+  context.response.body = { documents };
+  return;
+});
+
+router.put("/redirects/add", async (context) => {
+  const paramContext = context.request.url.searchParams.get("context");
+  const paramTerm = context.request.url.searchParams.get("term");
+  const paramSlug = context.request.url.searchParams.get("slug");
+
+  if (!paramSlug || !paramContext || !paramTerm) {
+    context.throw(400);
+    return;
+  }
+
+  const result = await createNewRedirect(paramSlug, paramContext, paramTerm);
+  if (result.status === "bad") {
+    context.throw(500);
+    return;
+  }
+
+  context.response.body = { success: true };
   return;
 });
 

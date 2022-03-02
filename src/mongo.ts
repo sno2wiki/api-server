@@ -96,3 +96,20 @@ export const findRedirects = async (context: string | null, term: string): Promi
   ).toArray();
   return aggregated;
 };
+
+export type Result<TBad = {}, TOk = {}> = ({ status: "ok" } & TOk) | ({ status: "bad" } & TBad);
+export const createNewRedirect = async (slug: string, context: string, term: string): Promise<Result> => {
+  try {
+    const doc = await docsCollection.findOne({ slug: slug });
+    if (!doc) return { status: "bad" };
+
+    await redirectsCollection.updateOne(
+      { doc: doc["_id"], context: context, term: term },
+      { $set: { updatedAt: new Date() } },
+      { upsert: true },
+    );
+    return { status: "ok" };
+  } catch (e) {
+    return { status: "bad" };
+  }
+};
