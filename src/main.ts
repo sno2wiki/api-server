@@ -2,13 +2,7 @@ import { bold, yellow } from "std/fmt/colors";
 import { Application, Router } from "oak";
 import { oakCors } from "cors";
 import { validate } from "./auth.ts";
-import {
-  createNewDocFromRedirect,
-  createNewRedirect,
-  findDocRedirects,
-  findRedirects,
-  publishTicket,
-} from "./mongo.ts";
+import { createDoc, createRedirect, findRedirects, getDocRedirects, publishTicket } from "./mongo/mod.ts";
 import { handleEditWS, handleViewWS } from "./handle_ws.ts";
 import { isValidDocSlug } from "./doc_slug.ts";
 
@@ -82,26 +76,15 @@ router.get("/docs/:slug/redirects", async (context) => {
     return;
   }
 
-  const result = await findDocRedirects(docSlug);
+  const result = await getDocRedirects({ slug: docSlug });
+  if (result.status === "bad") {
+    context.throw(500);
+    return;
+  }
+
+  const { redirects } = result;
   context.response.status = 200;
-  context.response.body = { redirects: result };
-  return;
-});
-
-router.get("/redirects/_/:term", async (context) => {
-  const termParam = context.params["term"];
-
-  const documents = await findRedirects(null, termParam);
-  context.response.body = { documents };
-  return;
-});
-
-router.get("/redirects/:context/:term", async (context) => {
-  const contextParam = context.params["context"];
-  const termParam = context.params["term"];
-
-  const documents = await findRedirects(contextParam, termParam);
-  context.response.body = { documents };
+  context.response.body = { redirects: redirects };
   return;
 });
 
@@ -114,8 +97,14 @@ router.get("/redirects/find", async (context) => {
     return;
   }
 
-  const documents = await findRedirects(paramContext, paramTerm);
-  context.response.body = { documents };
+  const result = await findRedirects({ context: paramContext, term: paramTerm });
+  if (result.status === "bad") {
+    context.throw(500);
+    return;
+  }
+
+  const { redirects } = result;
+  context.response.body = { documents: redirects };
   return;
 });
 
@@ -129,7 +118,7 @@ router.put("/redirects/add", async (context) => {
     return;
   }
 
-  const result = await createNewRedirect(paramSlug, paramContext, paramTerm);
+  const result = await createRedirect({ slug: paramSlug, context: paramContext, term: paramTerm });
   if (result.status === "bad") {
     context.throw(500);
     return;
@@ -152,7 +141,13 @@ router.get("/new/doc", async (context) => {
     return;
   }
 
-  const { slug } = await createNewDocFromRedirect(paramContext, paramTerm);
+  const result = await createDoc({ context: paramContext, term: paramTerm });
+  if (result.status === "bad") {
+    context.throw(500);
+    return;
+  }
+
+  const { slug } = result;
   context.response.body = { slug };
 });
 

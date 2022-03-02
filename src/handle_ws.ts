@@ -1,4 +1,4 @@
-import { deleteTicket, findDoc, findTicket, updateDocValue } from "./mongo.ts";
+import { deleteTicket, findTicket, getDoc, updateDocValue } from "./mongo/mod.ts";
 
 const valMap = new Map<string, unknown[]>();
 
@@ -53,7 +53,7 @@ export const handleEditWS = (ws: WebSocket, { docSlug }: { docSlug: string }) =>
           }
 
           try {
-            const stored = await findDoc(docSlug);
+            const stored = await getDoc(docSlug);
             if (stored && stored.value) {
               const value = stored.value;
               valMap.set(docSlug, value);
