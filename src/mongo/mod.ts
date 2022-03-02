@@ -59,5 +59,5 @@ export const updateDocValue = (slug: string, { value, userId }: { value: unknown
 
 export const getDocRedirects = factoryGetDocRedirects(docsCollection);
 export const findRedirects = factoryFindRedirects(redirectsCollection);
-export const createDoc = factoryCreateDoc(docsCollection);
+export const createDoc = factoryCreateDoc(docsCollection, redirectsCollection);
 export const createRedirect = factoryCreateRedirect(docsCollection, redirectsCollection);

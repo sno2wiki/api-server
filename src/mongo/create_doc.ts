@@ -4,19 +4,16 @@ import { Result } from "../types.ts";
 
 export const factoryCreateDoc: (
   docColl: Collection<Bson.Document>,
-) => (payload: { context: string; term: string }) => Promise<Result<{ slug: string }, {}>> = (docColl) =>
+  redColl: Collection<Bson.Document>,
+) => (payload: { context: string; term: string }) => Promise<Result<{ slug: string }, {}>> = (docColl, redColl) =>
   async ({ context, term }) => {
     try {
-      const newDocSlug = createDocSlug();
+      const slug = createDocSlug();
 
-      await docColl.insertOne(
-        {
-          slug: newDocSlug,
-          redirects: [{ context: context, term: term }],
-          createdAt: new Date(),
-        },
-      );
-      return { status: "ok", slug: newDocSlug };
+      const docId = await docColl.insertOne({ slug: slug, createdAt: new Date() });
+      await redColl.insertOne({ doc: docId, context: context, term: term });
+
+      return { status: "ok", slug: slug };
     } catch (e) {
       return { status: "bad" };
     }
