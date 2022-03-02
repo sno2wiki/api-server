@@ -6,9 +6,9 @@ export const factoryFindRedirects = (
 ) =>
   async (
     { context, term }: { context: string | null; term: string },
-  ): Promise<Result<{ redirects: { slug: string }[] }>> => {
+  ): Promise<Result<{ documents: { slug: string }[] }>> => {
     try {
-      const aggregated = await redColl.aggregate<{ slug: string }>(
+      const documents = await redColl.aggregate<{ slug: string }>(
         [
           { "$match": { ...(context && { "context": context }), "term": term } },
           { "$lookup": { "from": "docs", "localField": "doc", "foreignField": "_id", "as": "docs" } },
@@ -18,7 +18,7 @@ export const factoryFindRedirects = (
           // { "$lookup": { "from": "redirects", "localField": "_id", "foreignField": "doc", "as": "redirects" } },
         ],
       ).toArray();
-      return { status: "ok", redirects: aggregated };
+      return { status: "ok", documents: documents };
     } catch (e) {
       return { status: "bad" };
     }

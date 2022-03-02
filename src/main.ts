@@ -103,17 +103,21 @@ router.get("/redirects/find", async (context) => {
     return;
   }
 
-  const { redirects } = result;
-  context.response.body = { documents: redirects };
+  const { documents } = result;
+  context.response.body = { context: paramContext, term: paramTerm, documents: documents };
   return;
 });
 
-router.put("/redirects/add", async (context) => {
+router.put("/add/redirect", async (context) => {
   const paramContext = context.request.url.searchParams.get("context");
   const paramTerm = context.request.url.searchParams.get("term");
   const paramSlug = context.request.url.searchParams.get("slug");
 
-  if (!paramSlug || !paramContext || !paramTerm) {
+  if (
+    !paramSlug ||
+    !paramContext || paramContext === "_" ||
+    !paramTerm
+  ) {
     context.throw(400);
     return;
   }
@@ -124,18 +128,17 @@ router.put("/redirects/add", async (context) => {
     return;
   }
 
-  context.response.body = { success: true };
+  context.response.body = { context: paramContext, term: paramTerm, slug: paramSlug };
   return;
 });
 
-router.get("/new/doc", async (context) => {
+router.post("/add/doc", async (context) => {
   const paramContext = context.request.url.searchParams.get("context");
   const paramTerm = context.request.url.searchParams.get("term");
 
   if (
-    !paramTerm ||
-    !paramContext ||
-    paramContext === "_"
+    !paramContext || paramContext === "_" ||
+    !paramTerm
   ) {
     context.throw(400);
     return;
@@ -148,7 +151,7 @@ router.get("/new/doc", async (context) => {
   }
 
   const { slug } = result;
-  context.response.body = { slug };
+  context.response.body = { slug, context: paramContext, term: paramTerm };
 });
 
 app.use(oakCors());
