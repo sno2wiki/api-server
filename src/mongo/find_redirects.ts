@@ -10,7 +10,14 @@ export const factoryFindRedirects = (
     try {
       const documents = await redColl.aggregate<{ slug: string }>(
         [
-          { "$match": { ...(context && { "context": context }), "term": term } },
+          {
+            "$match": {
+              ...(context && {
+                "context": { "$regex": context, "$options": "i" },
+              }),
+              "term": { "$regex": term, "$options": "i" },
+            },
+          },
           { "$lookup": { "from": "docs", "localField": "doc", "foreignField": "_id", "as": "docs" } },
           { "$unwind": { "path": "$docs" } },
           { "$replaceRoot": { "newRoot": "$docs" } },
