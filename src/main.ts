@@ -2,7 +2,7 @@ import { bold, yellow } from "std/fmt/colors";
 import { Application, Router } from "oak";
 import { oakCors } from "cors";
 import { validate } from "./auth.ts";
-import { createDoc, createRedirect, findRedirects, getDocRedirects, publishTicket } from "./mongo/mod.ts";
+import { createDoc, createRedirect, findRedirects, getDocRedirects, publishTicket, search } from "./mongo/mod.ts";
 import { handleEditWS, handleViewWS } from "./handle_ws.ts";
 import { isValidDocSlug } from "./doc_slug.ts";
 
@@ -152,6 +152,24 @@ router.post("/add/doc", async (context) => {
 
   const { slug } = result;
   context.response.body = { slug, context: paramContext, term: paramTerm };
+});
+
+router.get("/search", async (context) => {
+  const paramQuery = context.request.url.searchParams.get("query");
+
+  if (!paramQuery || paramQuery === "") {
+    context.throw(400);
+    return;
+  }
+
+  const result = await search({ query: paramQuery });
+  if (result.status === "bad") {
+    context.throw(500);
+    return;
+  }
+
+  const { slug, term } = result;
+  context.response.body = { query: paramQuery, slug, term };
 });
 
 app.use(oakCors());

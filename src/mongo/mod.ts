@@ -4,6 +4,7 @@ import { factoryCreateRedirect } from "./create_redirect.ts";
 import { factoryFindRedirects } from "./find_redirects.ts";
 import { factoryGetDocRedirects } from "./get_doc_redirects.ts";
 import { Result } from "../types.ts";
+import { isValidDocSlug } from "../doc_slug.ts";
 
 const mongoClient = new MongoClient();
 await mongoClient.connect(Deno.env.get("MONGO_URI")!);
@@ -61,3 +62,61 @@ export const getDocRedirects = factoryGetDocRedirects(docsCollection);
 export const findRedirects = factoryFindRedirects(redirectsCollection);
 export const createDoc = factoryCreateDoc(docsCollection, redirectsCollection);
 export const createRedirect = factoryCreateRedirect(docsCollection, redirectsCollection);
+
+export const search = async (
+  { query }: { query: string },
+): Promise<
+  Result<
+    {
+      slug: null | { slug: string };
+      // context: null | { context: string; termCandidates: string[] }[];
+      term: null | { context: string; term: string; conflicted: boolean }[];
+    }
+  >
+> => {
+  try {
+    /*
+    const findBySlug = isValidDocSlug(query)
+      ? await (async () => {
+        const res = await docsCollection.findOne({ slug: query });
+        return res;
+      })()
+      : null;
+    */
+    const findByTerm = await redirectsCollection
+      .aggregate<{ context: string; term: string; conflicted: boolean }>(
+        [
+          {
+            "$match": {
+              "term": { "$regex": query, "$options": "i" },
+            },
+          },
+          {
+            "$group": {
+              "_id": { "context": "$context", "term": "$term" },
+              "docsCount": { "$count": {} },
+            },
+          },
+          { "$sort": { "_id.term": -1 } },
+          { "$limit": 5 },
+          {
+            "$project": {
+              "_id": 0,
+              "context": "$_id.context",
+              "term": "$_id.term",
+              "conflicted": { "$cond": [{ "$lte": ["$docsCount", 1] }, false, true] },
+            },
+          },
+        ],
+      ).toArray();
+
+    return {
+      status: "ok",
+      slug: null,
+      // context: null,
+      term: findByTerm,
+    };
+  } catch (e) {
+    return { status: "bad" };
+  }
+};
